@@ -25,15 +25,13 @@
     </visual>
   </link>
 
-  <!-- Front Camera Joint: Revolute on Y-axis -->
-
 <joint name="${drone_id}/front_cam_joint" type="revolute">
-  <origin rpy="0 0 0" xyz="0.2 0 0"/>
+  <origin rpy="0 0 0" xyz="0.2 0 0.05"/>
   <parent link="${drone_id}/base_link"/>
   <child link="${drone_id}/front_cam_link"/>
   <axis xyz="0 1 0"/>
   <limit effort="1.0" velocity="1.0" lower="-1.57" upper="1.57"/>
-  <dynamics damping="0.1" friction="0.1"/>
+  <dynamics damping="0.0" friction="0.0"/>
   <ros2_control>
     <hardware>
       <plugin>fake_components/GenericSystem</plugin>
@@ -44,12 +42,10 @@
   </ros2_control>
 </joint>
 
-
-
 <link name="${drone_id}/front_cam_link">
   <visual>
     <geometry>
-      <cylinder length="0.1" radius="0.01"/>
+      <cylinder length="0.05" radius="0.025"/>
     </geometry>
     <material name="Blue">
       <color rgba="0.0 0.0 1.0 1.0"/>
@@ -57,12 +53,12 @@
   </visual>
   <collision>
     <geometry>
-      <cylinder length="0.1" radius="0.01"/>
+      <cylinder length="0.025" radius="0.025"/>
     </geometry>
   </collision>
   <inertial>
-    <mass value="0.1"/>
-    <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0002"/>
+    <mass value="0.01"/>
+    <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.002"/>
   </inertial>
 </link>
 
@@ -93,16 +89,10 @@
       <positionZDifferentialGain>0.2</positionZDifferentialGain>
       <positionZIntegralGain>0.0</positionZIntegralGain>
       <positionZLimit>-1</positionZLimit>
-      <maxForce>300</maxForce>
+      <maxForce>10000</maxForce>
       <motionSmallNoise>0.05</motionSmallNoise>
       <motionDriftNoise>0.03</motionDriftNoise>
       <motionDriftNoiseTime>5.0</motionDriftNoiseTime>
-    </plugin>
-  </gazebo>
-
-  <gazebo>
-    <plugin name="gazebo_ros_joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
-      <joint_name>${drone_id}/front_cam_joint</joint_name>
     </plugin>
   </gazebo>
 
@@ -133,11 +123,6 @@
     </sensor>
   </gazebo>
 
-
-
-
-
-  <!-- Front Camera Sensor -->
  <gazebo reference="${drone_id}/front_cam_link">
     <sensor name="front_camera" type="camera">
       <camera>

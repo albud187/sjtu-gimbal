@@ -63,31 +63,31 @@ def generate_launch_description():
             namespace=R_NS[1],
             output='screen',
         ),
-        Node(
-            package='controller_manager',
-            executable='ros2_control_node',
-            parameters=[{'/drone1/robot_description': r_1_desc}, controller_config],
-            #parameters=[controller_config],
-            #remappings=[('/robot_description', '/drone1/robot_description')],
-            namespace=R_NS[1],
-            output='screen'
-        ),
+        # Node(
+        #     package='controller_manager',
+        #     executable='ros2_control_node',
+        #     parameters=[{'/drone1/robot_description': r_1_desc}, controller_config],
+        #     #parameters=[controller_config],
+        #     #remappings=[('/robot_description', '/drone1/robot_description')],
+        #     namespace=R_NS[1],
+        #     output='screen'
+        # ),
 
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['joint_state_broadcaster', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
-            namespace=R_NS[1],
-            output='screen',
-        ),
+        # Node(
+        #     package='controller_manager',
+        #     executable='spawner',
+        #     arguments=['joint_state_broadcaster', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
+        #     namespace=R_NS[1],
+        #     output='screen',
+        # ),
 
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['front_cam_joint_position_controller', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
-            namespace=R_NS[1],
-            output='screen',
-        ),
+        # Node(
+        #     package='controller_manager',
+        #     executable='spawner',
+        #     arguments=['front_cam_joint_position_controller', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
+        #     namespace=R_NS[1],
+        #     output='screen',
+        # ),
 
 
         IncludeLaunchDescription(
