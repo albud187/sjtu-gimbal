@@ -1,0 +1,11 @@
+  <!-- Front Camera Joint: Revolute on Y-axis -->
+  <joint name="${drone_id}/front_cam_joint" type="revolute">
+    <origin rpy="0 0 0" xyz="0.2 0 0"/>
+    <parent link="${drone_id}/base_link"/>
+    <child link="${drone_id}/front_cam_link"/>
+    <axis xyz="0 1 0"/> <!-- Rotate around the Y-axis -->
+    <limit effort="1.0" velocity="1.0" lower="-1.57" upper="1.57"/> <!-- -90° to 90° -->
+    <dynamics damping="0.1" friction="0.1"/>
+  </joint>
+
+  <link name="${drone_id}/front_cam_link"/>

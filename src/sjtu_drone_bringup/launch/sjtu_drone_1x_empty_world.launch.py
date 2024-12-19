@@ -1,18 +1,3 @@
-#!/usr/bin/env python3
-# Copyright 2023 Georg Novotny
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import os
 
 from ament_index_python.packages import get_package_share_directory
@@ -26,10 +11,17 @@ import xacro
 
 XACRO_FILE_NAME = "sjtu_drone_multi.urdf.xacro"
 XACRO_FILE_PATH = os.path.join(get_package_share_directory("sjtu_drone_description"),"urdf", XACRO_FILE_NAME)
-R_NS = ["drone0","drone1", "drone2"]
-init_poses = {R_NS[1]:"1.0 1.0 0.0", R_NS[2]: "0.0 5.0 0.0"}
+R_NS = ["drone0","drone1"]
+init_poses = {R_NS[1]:"1.0 1.0 0.0"}
 
 def generate_launch_description():
+
+    controller_config = os.path.join(
+        get_package_share_directory('sjtu_drone_description'),
+        'config',
+        'ros2_controllers.yaml'
+    )
+
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
     use_gui = DeclareLaunchArgument("use_gui", default_value="true", choices=["true", "false"], description="Whether to execute gzclient")
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
@@ -37,8 +29,6 @@ def generate_launch_description():
     r_1_doc = xacro.process_file(XACRO_FILE_PATH, mappings = {"drone_id":R_NS[1]})
     r_1_desc = r_1_doc.toprettyxml(indent='  ')
 
-    r_2_doc = xacro.process_file(XACRO_FILE_PATH, mappings = {"drone_id":R_NS[2]})
-    r_2_desc = r_2_doc.toprettyxml(indent='  ')
 
     world_file = os.path.join(
         get_package_share_directory("sjtu_drone_description"),
@@ -73,19 +63,29 @@ def generate_launch_description():
             namespace=R_NS[1],
             output='screen',
         ),
-
         Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            namespace=R_NS[2],
-            parameters=[{'frame_prefix': R_NS[2]+'/','use_sim_time': use_sim_time, 'robot_description': r_2_desc}]
+            package='controller_manager',
+            executable='ros2_control_node',
+            parameters=[{'/drone1/robot_description': r_1_desc}, controller_config],
+            #parameters=[controller_config],
+            #remappings=[('/robot_description', '/drone1/robot_description')],
+            namespace=R_NS[1],
+            output='screen'
         ),
 
         Node(
-            package='joint_state_publisher',
-            executable='joint_state_publisher',
-            name=R_NS[2]+"_" +'joint_state_publisher',
-            namespace=R_NS[2],
+            package='controller_manager',
+            executable='spawner',
+            arguments=['joint_state_broadcaster', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
+            namespace=R_NS[1],
+            output='screen',
+        ),
+
+        Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['front_cam_joint_position_controller', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
+            namespace=R_NS[1],
             output='screen',
         ),
 
@@ -105,13 +105,6 @@ def generate_launch_description():
             package="sjtu_drone_bringup",
             executable="spawn_drone",
             arguments=[r_1_desc, R_NS[1], init_poses[R_NS[1]]],
-            output="screen"
-        ),
-
-        Node(
-            package="sjtu_drone_bringup",
-            executable="spawn_drone",
-            arguments=[r_2_desc, R_NS[2], init_poses[R_NS[2]]],
             output="screen"
         )
     ])
