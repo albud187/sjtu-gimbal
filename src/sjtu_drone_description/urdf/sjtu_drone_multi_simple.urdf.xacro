@@ -85,6 +85,4 @@
     </sensor>
   </gazebo>
 
-  	<xacro:include filename="robot_core_lr.xacro"/>
-    <xacro:include filename="gazebo_control.xacro"/>
 </robot>

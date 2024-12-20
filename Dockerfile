@@ -41,7 +41,10 @@ RUN pip install "numpy<2"
 RUN apt update && \
     apt install -y xterm && \
     apt install ros-humble-ros2-control -y && \
-    apt install ros-humble-controller-manager -y
+    apt install ros-humble-controller-manager -y && \
+    apt install ros-humble-ros2-controllers -y && \
+    apt install ros-humble-gazebo-ros2-control -y && \
+    apt-get install ros-humble-xacro
 
 ENTRYPOINT ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && exec bash"]
 

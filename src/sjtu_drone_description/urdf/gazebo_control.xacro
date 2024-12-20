@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+	
+	<gazebo>
+    	<plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      		<!-- Specify the configuration file for position control -->
+      		<parameters>/workdir/src/sjtu_drone_description/config/controller_position.yaml</parameters>
+      		<!-- Specify the configuration file for velocity control -->
+      		<parameters>/workdir/src/sjtu_drone_description/config/controller_velocity.yaml</parameters>
+    	</plugin>
+  	</gazebo>
+	
+</robot>
