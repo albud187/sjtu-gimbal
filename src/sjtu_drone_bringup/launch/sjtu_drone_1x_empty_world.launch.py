@@ -2,33 +2,26 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction, ExecuteProcess, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command
 import xacro
 
 XACRO_FILE_NAME = "sjtu_drone_multi.urdf.xacro"
-XACRO_FILE_PATH = os.path.join(get_package_share_directory("sjtu_drone_description"),"urdf", XACRO_FILE_NAME)
-R_NS = ["drone0","drone1"]
-init_poses = {R_NS[1]:"1.0 1.0 0.0"}
+XACRO_FILE_PATH = os.path.join(get_package_share_directory("sjtu_drone_description"), "urdf", XACRO_FILE_NAME)
+R_NS = ["drone0", "drone1"]
+init_poses = {R_NS[1]: "1.0 1.0 0.0"}
 
 def generate_launch_description():
-
-    controller_config = os.path.join(
-        get_package_share_directory('sjtu_drone_description'),
-        'config',
-        'ros2_controllers.yaml'
-    )
 
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
     use_gui = DeclareLaunchArgument("use_gui", default_value="true", choices=["true", "false"], description="Whether to execute gzclient")
     pkg_gazebo_ros = get_package_share_directory('gazebo_ros')
     
-    r_1_doc = xacro.process_file(XACRO_FILE_PATH, mappings = {"drone_id":R_NS[1]})
+    r_1_doc = xacro.process_file(XACRO_FILE_PATH, mappings={"drone_id": R_NS[1]})
     r_1_desc = r_1_doc.toprettyxml(indent='  ')
-
 
     world_file = os.path.join(
         get_package_share_directory("sjtu_drone_description"),
@@ -45,6 +38,17 @@ def generate_launch_description():
             )]
         return []
 
+    load_joint_state_broadcaster = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_state_broadcaster'],
+        output='screen'
+    )
+
+    load_joint_trajectory_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_trajectory_controller'],
+        output='screen'
+    )
 
     return LaunchDescription([
         use_gui,
@@ -53,42 +57,16 @@ def generate_launch_description():
             package='robot_state_publisher',
             executable='robot_state_publisher',
             namespace=R_NS[1],
-            parameters=[{'frame_prefix': R_NS[1]+'/','use_sim_time': use_sim_time, 'robot_description': r_1_desc}]
+            parameters=[{'frame_prefix': R_NS[1] + '/', 'use_sim_time': use_sim_time, 'robot_description': r_1_desc}]
         ),
 
         Node(
             package='joint_state_publisher',
             executable='joint_state_publisher',
-            name=R_NS[1]+"_" +'joint_state_publisher',
+            name=R_NS[1] + "_" + 'joint_state_publisher',
             namespace=R_NS[1],
             output='screen',
         ),
-        # Node(
-        #     package='controller_manager',
-        #     executable='ros2_control_node',
-        #     parameters=[{'/drone1/robot_description': r_1_desc}, controller_config],
-        #     #parameters=[controller_config],
-        #     #remappings=[('/robot_description', '/drone1/robot_description')],
-        #     namespace=R_NS[1],
-        #     output='screen'
-        # ),
-
-        # Node(
-        #     package='controller_manager',
-        #     executable='spawner',
-        #     arguments=['joint_state_broadcaster', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
-        #     namespace=R_NS[1],
-        #     output='screen',
-        # ),
-
-        # Node(
-        #     package='controller_manager',
-        #     executable='spawner',
-        #     arguments=['front_cam_joint_position_controller', '--controller-manager', f'/{R_NS[1]}/controller_manager'],
-        #     namespace=R_NS[1],
-        #     output='screen',
-        # ),
-
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -106,5 +84,25 @@ def generate_launch_description():
             executable="spawn_drone",
             arguments=[r_1_desc, R_NS[1], init_poses[R_NS[1]]],
             output="screen"
+        ),
+
+        # Include gimbaled camera controllers
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=Node(
+                    package="sjtu_drone_bringup",
+                    executable="spawn_drone",
+                    arguments=[r_1_desc, R_NS[1], init_poses[R_NS[1]]],
+                    output="screen"
+                ),
+                on_exit=[load_joint_state_broadcaster],
+            )
+        ),
+
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_joint_state_broadcaster,
+                on_exit=[load_joint_trajectory_controller],
+            )
         )
     ])

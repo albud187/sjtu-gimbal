@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'spawn_drone = sjtu_drone_bringup.spawn_drone:main',
+            'control = sjtu_drone_bringup.control:main'
         ],
     },
 )
