@@ -37,19 +37,53 @@ def generate_launch_description():
                 launch_arguments={'verbose': 'true'}.items()
             )]
         return []
+    
+    # load_joint_state_broadcaster = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #          'joint_state_broadcaster'],
+    #     output='screen'
+    # )
 
+    # load_joint_trajectory_controller = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #          'joint_trajectory_controller'],
+    #     output='screen'
+    # )
     load_joint_state_broadcaster = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen'
+        cmd=[
+            "ros2", "control", "load_controller",
+            "--set-state", "active",
+            "joint_state_broadcaster",
+            "--controller-manager", f"/{R_NS[1]}/controller_manager"
+        ],
+        output="screen"
     )
 
     load_joint_trajectory_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_trajectory_controller'],
-        output='screen'
+        cmd=[
+            "ros2", "control", "load_controller",
+            "--set-state", "active",
+            "joint_trajectory_controller",
+            "--controller-manager", f"/{R_NS[1]}/controller_manager"
+        ],
+        output="screen"
     )
 
+    spawner_joint_state_broadcaster = Node(
+    package="controller_manager",
+    executable="spawner",
+    namespace=R_NS[1],  # "drone1"
+    arguments=["joint_state_broadcaster", "--controller-manager", f"/{R_NS[1]}/controller_manager"],
+    output="screen"
+    )  
+
+    spawner_joint_trajectory_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        namespace=R_NS[1],  # "drone1"
+        arguments=["joint_trajectory_controller", "--controller-manager", f"/{R_NS[1]}/controller_manager"],
+        output="screen"
+    )
     return LaunchDescription([
         use_gui,
 
@@ -63,10 +97,11 @@ def generate_launch_description():
         Node(
             package='joint_state_publisher',
             executable='joint_state_publisher',
-            name=R_NS[1] + "_" + 'joint_state_publisher',
+            name= 'joint_state_publisher',
             namespace=R_NS[1],
             output='screen',
         ),
+        
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -85,24 +120,28 @@ def generate_launch_description():
             arguments=[r_1_desc, R_NS[1], init_poses[R_NS[1]]],
             output="screen"
         ),
+        
 
-        # Include gimbaled camera controllers
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=Node(
-                    package="sjtu_drone_bringup",
-                    executable="spawn_drone",
-                    arguments=[r_1_desc, R_NS[1], init_poses[R_NS[1]]],
-                    output="screen"
-                ),
-                on_exit=[load_joint_state_broadcaster],
-            )
-        ),
+        spawner_joint_state_broadcaster,
+        spawner_joint_trajectory_controller
 
-        RegisterEventHandler(
-            event_handler=OnProcessExit(
-                target_action=load_joint_state_broadcaster,
-                on_exit=[load_joint_trajectory_controller],
-            )
-        )
+  
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=Node(
+        #             package="sjtu_drone_bringup",
+        #             executable="spawn_drone",
+        #             arguments=[r_1_desc, R_NS[1], init_poses[R_NS[1]]],
+        #             output="screen"
+        #         ),
+        #         on_exit=[load_joint_state_broadcaster],
+        #     )
+        # ),
+
+        # RegisterEventHandler(
+        #     event_handler=OnProcessExit(
+        #         target_action=load_joint_state_broadcaster,
+        #         on_exit=[load_joint_trajectory_controller],
+        #     )
+        # )
     ])

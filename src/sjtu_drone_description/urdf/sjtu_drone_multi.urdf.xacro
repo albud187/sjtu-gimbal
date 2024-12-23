@@ -2,6 +2,16 @@
 <robot name="sjtu_drone" xmlns:xacro="http://ros.org/wiki/xacro">
   <xacro:arg name="drone_id" default="drone0"/>
   <xacro:property name="drone_id" value="$(arg drone_id)"/>
+  
+  <link name="${drone_id}/robot_root"/>
+
+  <!-- Fixed joint from dummy root to the actual base_link -->
+  <joint name="${drone_id}/root_joint" type="fixed">
+    <parent link="${drone_id}/robot_root"/>
+    <child link="${drone_id}/base_link"/>
+    <!-- No offset, or if you want to shift the base, do so here -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
 
   <link name="${drone_id}/base_link">
     <inertial>

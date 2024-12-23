@@ -14,19 +14,18 @@ controller_manager:
 forward_position_controller:
   ros__parameters:
     joints:
-      - ax1_joint
-      - ax2_joint
+      - drone1/ax1_joint
+      - drone1/ax2_joint
     interface_name: position
 
 joint_trajectory_controller:
   ros__parameters:
     joints:
-      - ax1_joint
-      - ax2_joint
+      - drone1/ax1_joint
+      - drone1/ax2_joint
     interface_name: position
     command_interfaces:
       - position
-      - velocity
     state_interfaces:
       - position
       - velocity

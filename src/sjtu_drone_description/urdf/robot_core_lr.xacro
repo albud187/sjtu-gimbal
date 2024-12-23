@@ -4,57 +4,57 @@
     <xacro:include filename="inertial_macros.xacro"/>
 
     <!-- AX1_LINK -->
-    <joint name="ax1_joint" type="revolute">
+    <joint name="${drone_id}/ax1_joint" type="revolute">
         <parent link="${drone_id}/base_link"/>
-        <child link="ax1_link"/>
+        <child link="${drone_id}/ax1_link"/>
         <limit effort="10" velocity="1" upper="${pi*2}" lower="${-pi*2}"/>
         <axis xyz="0 0 1"/>
         <origin xyz="0 0 0.2"/>
         <dynamics damping="10.0" friction="10.0"/>
     </joint>
 
-    <link name="ax1_link">
+    <link name="${drone_id}/ax1_link">
         <xacro:inertial_box mass="0.05" x="0.1" y="0.1" z="0.1">
             <origin xyz="0 0 0.2" rpy="0 0 0"/>
         </xacro:inertial_box>
     </link>
 
-    <gazebo reference="ax1_link">
+    <gazebo reference="${drone_id}/ax1_link">
         <material>Gazebo/Red</material>
         <mu1 value="10"/>
         <mu2 value="10"/>
     </gazebo>
 
     <!-- AX2_LINK -->
-    <joint name="ax2_joint" type="revolute">
-        <parent link="ax1_link"/>
-        <child link="ax2_link"/>
+    <joint name="${drone_id}/ax2_joint" type="revolute">
+        <parent link="${drone_id}/ax1_link"/>
+        <child link="${drone_id}/ax2_link"/>
         <limit effort="10" velocity="1" upper="${pi/2}" lower="${-pi/2}"/>
         <origin xyz="0 0 0.2"/>
         <axis xyz="1 0 0"/>
         <dynamics damping="10.0" friction="10.0"/>
     </joint>
 
-    <link name="ax2_link">
+    <link name="${drone_id}/ax2_link">
         <xacro:inertial_box mass="0.05" x="0.1" y="0.1" z="0.1">
             <origin xyz="0 0 0.2" rpy="0 0 0"/>
         </xacro:inertial_box>
     </link>
 
-    <gazebo reference="ax2_link">
+    <gazebo reference="${drone_id}/ax2_link">
         <material>Gazebo/Black</material>
         <mu1 value="10"/>
         <mu2 value="10"/>
     </gazebo>
 
     <!-- Camera Link -->
-    <joint name="camera_joint" type="fixed">
+    <joint name="${drone_id}/camera_joint" type="fixed">
         <origin rpy="0 0 0" xyz="0.2 0 0.075"/>
         <parent link="${drone_id}/base_link"/>
-        <child link="camera_link"/>
+        <child link="${drone_id}/camera_link"/>
     </joint>
 
-    <link name="camera_link">
+    <link name="${drone_id}/camera_link">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
@@ -66,29 +66,30 @@
 
 <!-- controller -->
 	<ros2_control name="GazeboSystem" type="system">
+    
     	<hardware>
       		<plugin>gazebo_ros2_control/GazeboSystem</plugin>
     	</hardware>
 		
-		<joint name="ax1_joint">
+		<joint name="${drone_id}/ax1_joint">
       		<command_interface name="position">
         		<param name="min">${-pi*2}</param>
         		<param name="max">${pi*2}</param>
       		</command_interface>
       		<state_interface name="position">
-				<param name="initial_value">${0}</param>
+				<param name="initial_value">${pi/4}</param>
 			</state_interface>
       		<state_interface name="velocity"/>
       		<!--<state_interface name="effort"/>-->
     	</joint>   		
  
-    	<joint name="ax2_joint">
+    	<joint name="${drone_id}/ax2_joint">
       		<command_interface name="position">
         		<param name="min">${-pi/2}</param>
         		<param name="max">${pi/2}</param>
       		</command_interface>
       		<state_interface name="position">
-				<param name="initial_value">${0}</param>
+				<param name="initial_value">${pi/4}</param>
 			</state_interface>
       		<state_interface name="velocity"/>
       		<!--<state_interface name="effort"/>-->
@@ -97,7 +98,7 @@
   	</ros2_control>	
 	
     <!-- Camera Sensor -->
-    <gazebo reference="camera_link">
+    <gazebo reference="${drone_id}/camera_link">
         <sensor name="front_camera" type="camera">
             <camera>
                 <horizontal_fov>2.09</horizontal_fov>

@@ -19,7 +19,7 @@ curl -L https://github.com/osrf/gazebo_models/archive/refs/heads/master.zip -o /
     && unzip /tmp/gazebo_models.zip -d /tmp && mkdir -p ~/.gazebo/models/ && mv /tmp/gazebo_models-master/* ~/.gazebo/models/ \
     && rm -r /tmp/gazebo_models.zip
 ```
-
+ros2 service call /drone1/controller_manager/load_controller controller_manager_msgs/srv/LoadController "{name: 'drone1/joint_state_broadcaster'}"
 ## TF Tree
 
 ![TF Tree](../imgs/tf_tree.png)
