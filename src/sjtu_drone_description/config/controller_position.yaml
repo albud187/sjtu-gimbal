@@ -3,13 +3,13 @@ controller_manager:
     update_rate: 100  # Hz
 
     joint_trajectory_controller:
-      type: drone1/joint_trajectory_controller/JointTrajectoryController
+      type: joint_trajectory_controller/JointTrajectoryController
 
     forward_position_controller:
-      type: drone1/forward_command_controller/ForwardCommandController    
+      type: forward_command_controller/ForwardCommandController    
 
     joint_state_broadcaster:
-      type: drone1/joint_state_broadcaster/JointStateBroadcaster
+      type: joint_state_broadcaster/JointStateBroadcaster
 
 forward_position_controller:
   ros__parameters:
@@ -26,6 +26,7 @@ joint_trajectory_controller:
     interface_name: position
     command_interfaces:
       - position
+
     state_interfaces:
       - position
       - velocity
