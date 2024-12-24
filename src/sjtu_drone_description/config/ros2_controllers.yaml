@@ -1,9 +1,0 @@
-controller_manager:
-  ros__parameters:
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
-
-    front_cam_joint_position_controller:
-      type: position_controllers/JointPositionController
-      joint: "drone1/front_cam_joint"
-      pid: {p: 10.0, i: 0.1, d: 0.01}

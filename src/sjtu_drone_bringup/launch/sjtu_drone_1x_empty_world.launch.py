@@ -12,9 +12,20 @@ import xacro
 from launch_ros.actions import Node
 from launch.actions import ExecuteProcess
 
-XACRO_FILE_NAME = "sjtu_drone_multi.urdf.xacro"
+XACRO_FILE_NAME = "sjtu_drone_gimbal.xacro"
 R_NS = "drone1"  # or pass via an arg if you want multiple
-init_poses = {"drone1": "1.0 1.0 0.0"}  # just an example
+init_poses = {"drone1": "1.0 1.0 1.0"}  # just an example
+
+# Retrieve paths
+pkg_this = get_package_share_directory("sjtu_drone_description")
+pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
+
+# Convert XACRO -> URDF
+xacro_file_path = os.path.join(pkg_this, "urdf", XACRO_FILE_NAME)
+drone_ns = R_NS  # "drone1"
+doc = xacro.process_file(xacro_file_path, mappings={"drone_id": drone_ns})
+robot_description = doc.toprettyxml(indent="  ")
+
 
 def generate_launch_description():
     """Launch Gazebo with a drone that has a gimballed camera, then spawn controllers once ready."""
@@ -28,15 +39,7 @@ def generate_launch_description():
         description="Whether to execute gzclient"
     )
 
-    # Retrieve paths
-    pkg_this = get_package_share_directory("sjtu_drone_description")
-    pkg_gazebo_ros = get_package_share_directory("gazebo_ros")
-    
-    # Convert XACRO -> URDF
-    xacro_file_path = os.path.join(pkg_this, "urdf", XACRO_FILE_NAME)
-    drone_ns = R_NS  # "drone1"
-    doc = xacro.process_file(xacro_file_path, mappings={"drone_id": drone_ns})
-    robot_description = doc.toprettyxml(indent="  ")
+
 
     # World file
     world_file = os.path.join(pkg_this, "worlds", "empty_world.world")
@@ -81,7 +84,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Node: joint_state_publisher (optional but included as you had it)
     jsp_node = Node(
         package="joint_state_publisher",
         executable="joint_state_publisher",
@@ -98,60 +100,25 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Controller spawners (using the spawner node approach)
-    spawner_joint_state_broadcaster = Node(
+    trajectory_controller =  Node(
         package="controller_manager",
         executable="spawner",
-        namespace=drone_ns,
-        arguments=["joint_state_broadcaster", "--controller-manager", f"/{drone_ns}/controller_manager"],
-        output="screen",
+        arguments=[
+            "position_trajectory_controller",
+            "-c",
+            "/drone1/controller_manager",
+            "--inactive",
+        ],
     )
-
-    spawner_joint_trajectory_controller = Node(
-        package="controller_manager",
-        executable="spawner",
-        namespace=drone_ns,
-        arguments=["joint_trajectory_controller", "--controller-manager", f"/{drone_ns}/controller_manager"],
-        output="screen",
-    )
-
-    # === Event Handlers ===
-    # 1) Wait for spawn_drone_node to exit => start the joint_state_broadcaster
-    event_spawn_jsp = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=spawn_drone_node,
-            on_exit=[spawner_joint_state_broadcaster],
-        )
-    )
-
-    # 2) Wait for joint_state_broadcaster to load => start the joint_trajectory_controller
-    event_jsp_jtc = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=spawner_joint_state_broadcaster,
-            on_exit=[spawner_joint_trajectory_controller],
-        )
-    )
-
+    
+    
     # Now assemble the LaunchDescription
     return LaunchDescription([
         use_gui_arg,
-
-        # Start Gazebo server
         gzserver,
-
-        # Start gzclient if "use_gui" == "true"
         OpaqueFunction(function=launch_gzclient),
-
-        # Robot State Publisher
         rsp_node,
-
-        # Joint State Publisher
         jsp_node,
-
-        # Spawn the drone + gimbal
         spawn_drone_node,
-
-        # Event handlers that sequentially spawn controllers
-        event_spawn_jsp,
-        event_jsp_jtc,
+        trajectory_controller
     ])
