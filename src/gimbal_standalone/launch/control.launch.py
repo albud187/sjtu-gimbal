@@ -20,7 +20,7 @@ ax2 = ax2 * (math.pi/180)
 def generate_launch_description():
     return LaunchDescription([
         launch_ros.actions.Node(
-            package='arm_robot',
+            package='gimbal_standalone',
             executable='control.py',
             output='screen',
             arguments=[str(ax1), str(ax2)]),
