@@ -17,7 +17,7 @@ class ArmActionClient(Node):
     def send_goal(self, angle1, angle2):
         goal_msg = FollowJointTrajectory.Goal()
 
-        joint_names = ["drone1/ax1_joint", "drone1/ax2_joint"]
+        joint_names = ["ax1_joint", "ax2_joint"]
 
         points = []
         point = JointTrajectoryPoint()
