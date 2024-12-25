@@ -29,7 +29,7 @@ install(
 )
 
 install(
-  PROGRAMS src/control.py
+  PROGRAMS src/control.py src/velcon.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
