@@ -64,8 +64,8 @@ def main(args=None):
 
     # angle1 = float(sys.argv[1])
     # angle2 = float(sys.argv[2])
-    angle1 = -20.0
-    angle2 = -20.0
+    angle1 = 30.0
+    angle2 = 30.0
     future = action_client.send_goal(angle1, angle2)
 
     rclpy.spin(action_client)
