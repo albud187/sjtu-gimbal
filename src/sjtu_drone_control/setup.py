@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'teleop = sjtu_drone_control.teleop:main'
+            'teleop = sjtu_drone_control.teleop:main',
+            'gimbal_driver = sjtu_drone_control.gimbal_driver:main'
         ],
     },
 )
