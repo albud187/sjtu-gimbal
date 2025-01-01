@@ -21,7 +21,6 @@ public:
         //subscribe to target_pixel
         std::string T_gimbal_angles = "/gimbal_angles";
         std::string T_target = ns + "/target_pixel";
-        std::string T_gimbal_state = "/joint_states";
         
         flight_mode_sub = this->create_subscription<std_msgs::msg::String>(
             T_flight_mode, 10, std::bind(&GimbalControlNode::mode_cb, this, std::placeholders::_1));
@@ -29,12 +28,25 @@ public:
         target_pixel_sub = this->create_subscription<geometry_msgs::msg::Vector3>(
             T_target, 50, std::bind(&GimbalControlNode::target_pixel_cb, this, std::placeholders::_1));
 
+        gimbal_angle_pub = this->create_publisher<geometry_msgs::msg::Vector3<T_gimbal_angles, 60);
+    
+        gimbal_angle_thread = std::thread(&GimbalControlNode::publish_gimbal_angles, this);
+
+    
+    }
+
+    void join_gimbal_angle_thread(){
+        if (gimbal_angle_thread.joinable()){
+            gimbal_angle_thread.join();
+        }
     }
 
 private:
     std::mutex mutex_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr flight_mode_sub;
     rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr target_pixel_sub;
+
+    rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gimbal_angle_pub;
 
     geometry_msgs::msg::Vector3 target_pixel_coordinates;
     std_msgs::msg::String flt_mode;
@@ -66,15 +78,25 @@ private:
         return gimbal_angles;
     }
 
+    void publish_gimbal_angle(){
+        while(rclcpp::ok()){
+            geometry_msgs::msg::Vector3 gimbal_angles = gimbal_IK(target_pixel_coordinates);
+            gimbal_angle_pub->publish(gimbal_angles);
+            std::this_thread::sleep_for(std::chrono::milliseconds(4));
+        }
+    }
     
 
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     rclcpp::init(argc, argv);
-    auto rclcppNode = std::make_shared<GimbalControlNode>();
+    auto rclcppNode = std::make_shared<GimbalControlNode>()
 
     rclcpp::spin(rclcppNode);
+
+    rclcppNode->join_gimbal_angle_thread();
 
     rclcpp::shutdown();
     return 0;
