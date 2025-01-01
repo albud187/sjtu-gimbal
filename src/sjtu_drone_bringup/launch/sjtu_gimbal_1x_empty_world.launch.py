@@ -41,21 +41,27 @@ def generate_launch_description():
              'joint_trajectory_controller'],
         output='screen'
     )
-	
-    return LaunchDescription([
-        RegisterEventHandler(
+
+    reg_joint_state_broadcaster = RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=spawn_entity,
                 on_exit=[load_joint_state_broadcaster],
             )
-        ),
-        RegisterEventHandler(
+        )
+    
+    reg_joint_trajectory = RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=load_joint_state_broadcaster,
                 on_exit=[load_joint_trajectory],
             )
-        ),
+        )
+
+    LD = LaunchDescription([
+        reg_joint_state_broadcaster,
+        reg_joint_trajectory,
         rsp,
         gazebo,
         spawn_entity,
     ])
+	
+    return LD

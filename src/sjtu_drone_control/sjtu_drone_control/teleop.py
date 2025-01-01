@@ -1,137 +1,100 @@
-#!/usr/bin/env python3
-# Copyright 2023 Georg Novotny
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, Vector3
-from std_msgs.msg import Empty, Bool
+from std_msgs.msg import Empty, Bool, String
 import threading
 import sys
 import termios
 import tty
 
-MSG="""
-Control Your Drone!
----------------------------
-Moving around:
-        w
-    a   s    d
-        x
-
-q/e : increase/decrease linear and angular velocity
-A/D: rotate left/right
-t/l: takeoff/land
----------------------------
-CTRL-C to quit
----------------------------
 
 """
+w/s = accelerate translation forwards/backwards
+a/d = accelerate translation left/right
+i/k = accelerate translation up/down
+j/l = accelerate angular rotation left/right
+q = reset velocity to 0
 
+e = manual flight mode
+r = tracking mode
+t = chasing mode
+"""
+
+LIN_VEL_INCREMENT = 0.1
+ANG_VEL_INCREMENT = 0.1
+FLIGHT_MODES = {'e':"MAN_FLT", 'r':"TRACK"}
+
+T_flight_mode = "/sjtu_drone/mode"
+T_cmd_vel = "/sjtu_drone/cmd_vel"
 class TeleopNode(Node):
     def __init__(self) -> None:
         super().__init__('teleop_node')
 
         # Publishers
-        self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.takeoff_publisher = self.create_publisher(Empty, 'takeoff', 10)
-        self.land_publisher = self.create_publisher(Empty, 'land', 10)
-        
-        # Velocity parameters
-        self.linear_velocity = 0.0
-        self.angular_velocity = 0.0
-        self.linear_increment = 0.05
-        self.angular_increment = 0.05
-        self.max_linear_velocity = 1.0
-        self.max_angular_velocity = 1.0
-
+        self.cmd_vel_publisher = self.create_publisher(Twist, T_cmd_vel, 120)
+        self.mode_str_publisher = self.create_publisher(String, T_flight_mode, 120)
         # Start a separate thread to listen to keyboard inputs
         self.input_thread = threading.Thread(target=self.read_keyboard_input)
         self.input_thread.daemon = True
         self.input_thread.start()
 
-    def get_velocity_msg(self) -> str:
-        return "Linear Velocity: " + str(self.linear_velocity) + "\nAngular Velocity: " + str(self.angular_velocity) + "\n"
-
     def read_keyboard_input(self) -> None:
-        """
-        Read keyboard inputs and publish corresponding commands
-        """
+
+        cmd_vel = Twist()
+        flight_mode = String()
+        flight_mode.data = "e"
         while rclpy.ok():
-            # Print the instructions
-            print(MSG+self.get_velocity_msg())
+            
+            vel_report_str = f"vx, vy, vz, rz :  {str(round(cmd_vel.linear.x, 2))},  {str(round(cmd_vel.linear.y, 2))}, {str(round(cmd_vel.linear.z, 2))}, {str(round(cmd_vel.angular.z, 2))}"
+            print(vel_report_str)
+            print(" ")
             # Implement a non-blocking keyboard read
             key = self.get_key()
-            # Handle velocity changes
-            if key == 'q':
-                self.linear_velocity = min(self.linear_velocity + self.linear_increment, self.max_linear_velocity)
-                self.angular_velocity = min(self.angular_velocity + self.angular_increment, self.max_angular_velocity)
-            elif key == 'e':
-                self.linear_velocity = max(self.linear_velocity - self.linear_increment, -self.max_linear_velocity)
-                self.angular_velocity = max(self.angular_velocity - self.angular_increment, -self.max_angular_velocity)
+            
+            if key.lower() == 'q':
+                # zero
+                cmd_vel = Twist()
+                self.cmd_vel_publisher.publish(cmd_vel)
             elif key.lower() == 'w':
                 # Move forward
-                linear_vec = Vector3()
-                linear_vec.x = self.linear_velocity
-                self.publish_cmd_vel(linear_vec)
+                cmd_vel.linear.x = cmd_vel.linear.x + LIN_VEL_INCREMENT 
+                self.cmd_vel_publisher.publish(cmd_vel)
             elif key.lower() == 's':
-                # Hover
-                self.publish_cmd_vel()
-            elif key.lower() == 'x':
-                # Move backward
-                linear_vec = Vector3()
-                linear_vec.x = -self.linear_velocity
-                self.publish_cmd_vel(linear_vec)
-            elif key == 'a':
+                #move backward
+                cmd_vel.linear.x = cmd_vel.linear.x - LIN_VEL_INCREMENT 
+                self.cmd_vel_publisher.publish(cmd_vel)
+            elif key.lower() == 'a':
                 # Move Left
-                linear_vec = Vector3()
-                linear_vec.y = self.linear_velocity
-                self.publish_cmd_vel(linear_vec)
-            elif key == 'd':
+                cmd_vel.linear.y = cmd_vel.linear.y + LIN_VEL_INCREMENT
+                self.cmd_vel_publisher.publish(cmd_vel)
+            elif key.lower() == 'd':
                 # Move right
-                linear_vec = Vector3()
-                linear_vec.y = -self.linear_velocity
-                self.publish_cmd_vel(linear_vec)
-            elif key == 'A':
-                # Move Left
-                angular_vec = Vector3()
-                angular_vec.z = self.angular_velocity
-                self.publish_cmd_vel(angular_vec=angular_vec)
-            elif key == 'D':
-                # Move right
-                angular_vec = Vector3()
-                angular_vec.z = -self.angular_velocity
-                self.publish_cmd_vel(angular_vec=angular_vec)
-            elif key.lower() == 'r':
-                # Rise
-                linear_vec = Vector3()
-                linear_vec.z = self.linear_velocity
-                self.publish_cmd_vel(linear_vec)
-            elif key.lower() == 'f':
-                # Fall
-                linear_vec = Vector3()
-                linear_vec.z = -self.angular_velocity
-                self.publish_cmd_vel(linear_vec)
-            # Handle other keys for different movements
-            elif key == 't':
-                # Takeoff
-                self.takeoff_publisher.publish(Empty())
-            elif key == 'l':
-                # Land
-                self.publish_cmd_vel()
-                self.land_publisher.publish(Empty())
+                cmd_vel.linear.y =  cmd_vel.linear.y - LIN_VEL_INCREMENT
+                self.cmd_vel_publisher.publish(cmd_vel)
+            if key.lower() == 'i':
+                # Move up
+                cmd_vel.linear.z =  cmd_vel.linear.z + LIN_VEL_INCREMENT 
+                self.cmd_vel_publisher.publish(cmd_vel)
+            elif key.lower() == 'k':
+                #move down
+                cmd_vel.linear.z =  cmd_vel.linear.z - LIN_VEL_INCREMENT 
+                self.cmd_vel_publisher.publish(cmd_vel)
+            elif key.lower() == 'j':
+                # rotate left
+                cmd_vel.angular.z = cmd_vel.angular.z + ANG_VEL_INCREMENT
+                self.cmd_vel_publisher.publish(cmd_vel)
+            elif key.lower() == 'l':
+                # rotate right
+                cmd_vel.angular.z = cmd_vel.angular.z - ANG_VEL_INCREMENT
+                self.cmd_vel_publisher.publish(cmd_vel)
 
+            elif key.lower() in list(FLIGHT_MODES.keys()): 
+                flight_mode.data = FLIGHT_MODES[key]
+                self.mode_str_publisher.publish(flight_mode)
+            elif key == 'p':
+                print("EXITING)")
+                exit()           
+            
     def get_key(self) -> str:
         """
         Function to capture keyboard input
@@ -144,13 +107,6 @@ class TeleopNode(Node):
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return ch
-
-    def publish_cmd_vel(self, linear_vec: Vector3=Vector3(), angular_vec: Vector3=Vector3()) -> None:
-        """
-        Publish a Twist message to cmd_vel topic
-        """
-        twist = Twist(linear=linear_vec, angular=angular_vec)
-        self.cmd_vel_publisher.publish(twist)
 
 def main(args=None):
     rclpy.init(args=args)
