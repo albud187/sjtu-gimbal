@@ -13,11 +13,11 @@
 #include "programs/constants.h"
 #include "programs/cv_image_process.h"
 
-class UserCameraNode : public rclcpp::Node
+class CameraCVNode : public rclcpp::Node
 {
 public:
 
-    UserCameraNode() : Node("camera_cv_node"){
+    CameraCVNode() : Node("camera_cv_node"){
         //std::string ns = this->get_namespace();
         std::string ns = "sjtu_drone";
         std::string T_cam_img = "/front/image_raw";
@@ -25,16 +25,16 @@ public:
         std::string T_target = ns + "/target_pixel";
         std::string T_flight_mode = ns +"/mode";
         cam_ui_sub = this->create_subscription<sensor_msgs::msg::Image>(
-            T_cam_img, 10, std::bind(&UserCameraNode::camera_image_cb, this, std::placeholders::_1));
+            T_cam_img, 10, std::bind(&CameraCVNode::camera_image_cb, this, std::placeholders::_1));
 
         cam_track_sub = this->create_subscription<sensor_msgs::msg::Image>(
-            T_cam_img, 10, std::bind(&UserCameraNode::camera_track_cb, this, std::placeholders::_1));
+            T_cam_img, 10, std::bind(&CameraCVNode::camera_track_cb, this, std::placeholders::_1));
     
         vel_sub = this->create_subscription<geometry_msgs::msg::Twist>(
-            T_cmd_vel, 10, std::bind(&UserCameraNode::vel_cb, this, std::placeholders::_1));
+            T_cmd_vel, 10, std::bind(&CameraCVNode::vel_cb, this, std::placeholders::_1));
     
         flight_mode_sub = this->create_subscription<std_msgs::msg::String>(
-            T_flight_mode, 10, std::bind(&UserCameraNode::mode_cb, this, std::placeholders::_1));
+            T_flight_mode, 10, std::bind(&CameraCVNode::mode_cb, this, std::placeholders::_1));
 
         target_reporter = this->create_publisher<geometry_msgs::msg::Vector3>(T_target, 60);
     }
@@ -165,7 +165,7 @@ private:
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    auto rclcppNode = std::make_shared<UserCameraNode>();
+    auto rclcppNode = std::make_shared<CameraCVNode>();
 
     rclcpp::spin(rclcppNode);
 
