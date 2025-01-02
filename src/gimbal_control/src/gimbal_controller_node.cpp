@@ -3,7 +3,6 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "sensor_msgs/msg/image.hpp"
 #include <mutex>
 #include <thread>
 #include <cmath>
@@ -21,14 +20,15 @@ public:
         //subscribe to target_pixel
         std::string T_gimbal_angles = "/gimbal_angles";
         std::string T_target = ns + "/target_pixel";
-        
+        std::string T_flight_mode = ns +"/mode";
+
         flight_mode_sub = this->create_subscription<std_msgs::msg::String>(
             T_flight_mode, 10, std::bind(&GimbalControlNode::mode_cb, this, std::placeholders::_1));
         
         target_pixel_sub = this->create_subscription<geometry_msgs::msg::Vector3>(
             T_target, 50, std::bind(&GimbalControlNode::target_pixel_cb, this, std::placeholders::_1));
 
-        gimbal_angle_pub = this->create_publisher<geometry_msgs::msg::Vector3<T_gimbal_angles, 60);
+        gimbal_angle_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_angles, 120);
     
         gimbal_angle_thread = std::thread(&GimbalControlNode::publish_gimbal_angles, this);
 
@@ -43,13 +43,21 @@ public:
 
 private:
     std::mutex mutex_;
+    //subscribers
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr flight_mode_sub;
     rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr target_pixel_sub;
-
+    
+    //publishers
     rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gimbal_angle_pub;
 
+    //messages
     geometry_msgs::msg::Vector3 target_pixel_coordinates;
     std_msgs::msg::String flt_mode;
+    geometry_msgs::msg::Vector3 gimbal_angles;
+    geometry_msgs::msg::Vector3 gimbal_state;
+    //threads
+    std::thread gimbal_angle_thread;
+
 
     void mode_cb(const std_msgs::msg::String::SharedPtr msg){
         flt_mode = *msg;
@@ -58,31 +66,51 @@ private:
         target_pixel_coordinates = *msg;
     }
 
+
+    double atan2_2pi(double y, double x) {
+        double angle = atan2(y, x); // Get angle in range [-π, π]
+        if (angle < 0) {
+            angle += 2 * M_PI; // Convert to [0, 2pi] range
+        }
+        return angle;
+    }
     //inverse kinematics
-    geometry_msgs::msg::Vector3 gimbal_IK(geometry_msgs::msg::Vector3 target_pixel_coordinates){
-        geometry_msgs::msg::Vector3 gimbal_angles;
-        int d_px = target_pixel_coordinates.x - IMG_CENTER_W;
-        int d_py = target_pixel_coordinates.y - IMG_CENTER_H;
+    void gimbal_IK(geometry_msgs::msg::Vector3 target_pixel_coordinates, geometry_msgs::msg::Vector3 gimbal_state){
+        
+        //normalize from -1 to 1
+        float px_n = (target_pixel_coordinates.x - IMG_CENTER_W)/IMG_CENTER_W;
+        float py_n = (target_pixel_coordinates.y - IMG_CENTER_H)/IMG_CENTER_H;
+        
+        float px_s = sqrt(px_n*px_n + py_n*py_n);
 
-        //use pixel angle to calculate angle1
-        float angle1 = atan2(d_py, d_px);
 
-        //use pixel distance from optical axis to claculate angle2
-        float optical_axis_pixel_distance = sqrt(d_px**2 + d_py**2)
+        //calculate angle 1 delta
+        float angle1_delta = atan2_2pi(py_n, px_n) - gimbal_state.x;
 
-        float angle2 = atan2(optical_axis_pixel_distance, FOCAL_LEN);
+        //calculate angle 2 delta
 
-        gimbal_angles.x = angle1;
-        gimbal_angles.y = angle2;
+        float angle2_delta = sqrt(2*CAMERA_FOV*CAMERA_FOV)*px_s;
 
-        return gimbal_angles;
+
+        if (angle1_delta>0){
+            gimbal_angles.x -= MAX_ROT_RATE_1;
+        } else{
+            gimbal_angles.x += MAX_ROT_RATE_1; 
+        }
+
     }
 
-    void publish_gimbal_angle(){
+    void publish_gimbal_angles(){
         while(rclcpp::ok()){
-            geometry_msgs::msg::Vector3 gimbal_angles = gimbal_IK(target_pixel_coordinates);
+            
+            
+            if (flt_mode.data=="TRACKING" || flt_mode.data == "TRACK"){
+            std::cout<<"TRACKING"<<std::endl;
+            gimbal_IK(target_pixel_coordinates, target_pixel_coordinates);
             gimbal_angle_pub->publish(gimbal_angles);
             std::this_thread::sleep_for(std::chrono::milliseconds(4));
+            }
+
         }
     }
     
@@ -92,7 +120,7 @@ private:
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    auto rclcppNode = std::make_shared<GimbalControlNode>()
+    auto rclcppNode = std::make_shared<GimbalControlNode>();
 
     rclcpp::spin(rclcppNode);
 

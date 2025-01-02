@@ -17,16 +17,24 @@ def generate_launch_description():
                 )])
     )
 
+    gimbal_camera_node = Node(
+        package="gimbal_control",
+        executable="camera_cv_node",
+        name="camera_cv_node"
+    )
+
     gimbal_driver_node = Node(
         package = 'sjtu_drone_control',
         executable="gimbal_driver",
         name="gimbal_driver"
     )
 
-    gimbal_camera_node = Node(
+    gimbal_controller_node = Node(
         package="gimbal_control",
-        executable="camera_cv_node",
-        name="camera_cv_node"
+        executable="gimbal_controller_node",
+        name="gimbal_controller_node",
+        output='screen',
+        prefix='xterm -e'
     )
 
     teleop_node = Node(
@@ -42,6 +50,7 @@ def generate_launch_description():
         drone_world_launch,
         gimbal_driver_node,
         gimbal_camera_node,
+        gimbal_controller_node,
         teleop_node
     ])
 	

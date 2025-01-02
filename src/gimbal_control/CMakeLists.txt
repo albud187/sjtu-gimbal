@@ -25,14 +25,21 @@ find_package(sensor_msgs REQUIRED)
 
 #add executables
 add_executable(camera_cv_node src/camera_cv_node.cpp)
+add_executable(gimbal_controller_node src/gimbal_controller_node.cpp)
 
-#target dependencies
+# target dependencies
+
+## camera_cv_node
 target_link_libraries(camera_cv_node cv_image_process)
 ament_target_dependencies(camera_cv_node rclcpp geometry_msgs sensor_msgs cv_bridge OpenCV)
+
+## gimbal_controller_node
+ament_target_dependencies(gimbal_controller_node rclcpp geometry_msgs sensor_msgs)
 
 #install
 install(TARGETS
   camera_cv_node
+  gimbal_controller_node
   DESTINATION lib/${PROJECT_NAME})
 
 #Install launch files

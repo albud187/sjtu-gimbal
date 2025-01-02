@@ -36,7 +36,7 @@ public:
         flight_mode_sub = this->create_subscription<std_msgs::msg::String>(
             T_flight_mode, 10, std::bind(&CameraCVNode::mode_cb, this, std::placeholders::_1));
 
-        target_reporter = this->create_publisher<geometry_msgs::msg::Vector3>(T_target, 60);
+        target_reporter = this->create_publisher<geometry_msgs::msg::Vector3>(T_target, 120);
     }
 
 private:
@@ -55,7 +55,6 @@ private:
     geometry_msgs::msg::Vector3 pixel_target;
    
     cv::Mat target_image;
-   
     int p0x = IMAGE_WIDTH*0.15;
     int p1x = IMAGE_WIDTH*0.85;
     int p01y = IMAGE_HEIGHT/2;
@@ -100,6 +99,8 @@ private:
                 roi_len = UI_SQ_SIDE_LENTH/2;
             }
 
+            
+
             int pvx_y = p01y - 5*cmd_vel.linear.x;
             int pvy_x = p0x - 5*cmd_vel.linear.y;
             int pvz_y = p01y - 10*cmd_vel.linear.z;
@@ -116,7 +117,7 @@ private:
         
             cv::imshow(image_tile, cv_ptr->image);
             cv::Mat edge_img = edge_detect(cv_ptr->image);
-            cv::imshow("edge", edge_img);
+            //cv::imshow("edge", edge_img);
             cv::waitKey(1);
         } catch (const cv_bridge::Exception& e) {
             RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
