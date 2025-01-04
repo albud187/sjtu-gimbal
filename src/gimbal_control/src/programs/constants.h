@@ -20,4 +20,6 @@ float CAMERA_FOV = 2.09;
 float MAX_ROT_RATE_1 = 0.01;
 float MAX_ROT_RATE_2 = 0.01;
 
+// rad/s
+float MAX_GIMBAL_VEL = 0.2;
 #endif

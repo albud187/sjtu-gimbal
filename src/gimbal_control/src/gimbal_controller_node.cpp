@@ -21,6 +21,7 @@ public:
         std::string T_gimbal_angles = "/gimbal_angles";
         std::string T_target = ns + "/target_pixel";
         std::string T_flight_mode = ns +"/mode";
+        std::string T_gimbal_step = "/gimbal_step";
 
         flight_mode_sub = this->create_subscription<std_msgs::msg::String>(
             T_flight_mode, 10, std::bind(&GimbalControlNode::mode_cb, this, std::placeholders::_1));
@@ -28,16 +29,17 @@ public:
         target_pixel_sub = this->create_subscription<geometry_msgs::msg::Vector3>(
             T_target, 50, std::bind(&GimbalControlNode::target_pixel_cb, this, std::placeholders::_1));
 
-        gimbal_angle_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_angles, 120);
+        gimba_step_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_step, 60);
+        gimbal_angle_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_angles, 60);
     
-        gimbal_angle_thread = std::thread(&GimbalControlNode::publish_gimbal_angles, this);
+        gimbal_step_thread = std::thread(&GimbalControlNode::publish_gimbal_angles, this);
 
     
     }
 
-    void join_gimbal_angle_thread(){
-        if (gimbal_angle_thread.joinable()){
-            gimbal_angle_thread.join();
+    void join_gimbal_step_thread(){
+        if (gimbal_step_thread.joinable()){
+            gimbal_step_thread.join();
         }
     }
 
@@ -56,7 +58,7 @@ private:
     geometry_msgs::msg::Vector3 gimbal_angles;
     geometry_msgs::msg::Vector3 gimbal_state;
     //threads
-    std::thread gimbal_angle_thread;
+    std::thread gimbal_step_thread;
 
 
     void mode_cb(const std_msgs::msg::String::SharedPtr msg){
@@ -100,6 +102,12 @@ private:
 
     }
 
+    void gimbal_step_IK(geometry_msgs::Vector3 target_pixel_coordinates){
+
+
+
+    }
+
     void publish_gimbal_angles(){
         while(rclcpp::ok()){
             
@@ -124,7 +132,7 @@ int main(int argc, char *argv[])
 
     rclcpp::spin(rclcppNode);
 
-    rclcppNode->join_gimbal_angle_thread();
+    rclcppNode->join_gimbal_step_thread();
 
     rclcpp::shutdown();
     return 0;

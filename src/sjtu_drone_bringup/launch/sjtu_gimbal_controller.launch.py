@@ -48,9 +48,9 @@ def generate_launch_description():
 
     LD = LaunchDescription([
         drone_world_launch,
-        gimbal_driver_node,
+        #gimbal_driver_node,
         gimbal_camera_node,
-        gimbal_controller_node,
+        #gimbal_controller_node,
         teleop_node
     ])
 	
