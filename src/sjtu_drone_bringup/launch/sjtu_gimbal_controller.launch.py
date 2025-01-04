@@ -23,10 +23,10 @@ def generate_launch_description():
         name="camera_cv_node"
     )
 
-    gimbal_driver_node = Node(
+    gimbal_stepper_node = Node(
         package = 'sjtu_drone_control',
-        executable="gimbal_driver",
-        name="gimbal_driver"
+        executable="gimbal_stepper",
+        name="gimbal_stepper"
     )
 
     gimbal_controller_node = Node(
@@ -48,7 +48,7 @@ def generate_launch_description():
 
     LD = LaunchDescription([
         drone_world_launch,
-        #gimbal_driver_node,
+        gimbal_stepper_node,
         gimbal_camera_node,
         #gimbal_controller_node,
         teleop_node

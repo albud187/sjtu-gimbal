@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'teleop = sjtu_drone_control.teleop:main',
-            'gimbal_driver = sjtu_drone_control.gimbal_driver:main'
+            'gimbal_driver = sjtu_drone_control.gimbal_driver:main',
+            'gimbal_stepper = sjtu_drone_control.gimbal_stepper:main'
         ],
     },
 )

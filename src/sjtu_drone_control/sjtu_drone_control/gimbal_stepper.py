@@ -10,7 +10,7 @@ GIMBAL_STATE_TOPIC = "/joint_states"
 class JointStepperNode(Node):
     def __init__(self):
 
-        super().__init__('joint_stepper_node')
+        super().__init__('gimbal_stepper')
 
         self.gimbal_state = Vector3()
         self.gimbal_step = Vector3()

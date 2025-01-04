@@ -51,6 +51,7 @@ private:
     
     //publishers
     rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gimbal_angle_pub;
+    rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gimbal_step_pub;
 
     //messages
     geometry_msgs::msg::Vector3 target_pixel_coordinates;
