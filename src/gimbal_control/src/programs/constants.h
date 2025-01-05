@@ -22,4 +22,5 @@ float MAX_ROT_RATE_2 = 0.01;
 
 // rad/s
 float MAX_GIMBAL_VEL = 0.2;
+float TEST_GIMBAL_VEL = 0.05;
 #endif

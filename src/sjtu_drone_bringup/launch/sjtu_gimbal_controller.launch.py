@@ -50,7 +50,7 @@ def generate_launch_description():
         drone_world_launch,
         gimbal_stepper_node,
         gimbal_camera_node,
-        #gimbal_controller_node,
+        gimbal_controller_node,
         teleop_node
     ])
 	

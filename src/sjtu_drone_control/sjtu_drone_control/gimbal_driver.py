@@ -47,7 +47,7 @@ class JointTrajectoryPublisher(Node):
 
         # Publish the message
         self.publisher_.publish(msg)
-        self.get_logger().info(f'Published joint posiitons: {self.positions}')
+        #self.get_logger().info(f'Published joint posiitons: {self.positions}')
 
 
 def main(args=None):
