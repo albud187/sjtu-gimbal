@@ -7,10 +7,10 @@
     <joint name="ax1_joint" type="revolute">
         <parent link="base_link"/>
         <child link="ax1_link"/>
-        <limit effort="1.0" velocity="1" upper="${pi*2}" lower="${-pi*2}"/>
+        <limit effort="0.1" velocity="1" upper="${pi*2}" lower="${-pi*2}"/>
         <axis xyz="1 0 0"/>
         <origin xyz="0.3 0 0.075"/>
-        <dynamics damping="0.1" friction="0.1"/>
+        <dynamics damping="0.001" friction="0.001"/>
     </joint>
 
     <link name="ax1_link">
@@ -29,10 +29,10 @@
     <joint name="ax2_joint" type="revolute">
         <parent link="ax1_link"/>
         <child link="ax2_link"/>
-        <limit effort="1.0" velocity="1" upper="${pi/2}" lower="${-pi/2}"/>
+        <limit effort="0.1" velocity="1" upper="${pi/2}" lower="${-pi/2}"/>
         <origin xyz="0 0 0"/>
         <axis xyz="0 1 0"/>
-        <dynamics damping="0.1" friction="0.1"/>
+        <dynamics damping="0.001" friction="0.001"/>
     </joint>
 
     <link name="ax2_link">

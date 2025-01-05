@@ -71,7 +71,7 @@ public:
             T_flight_mode, 10, std::bind(&GimbalControlNode::mode_cb, this, std::placeholders::_1));
         
         target_pixel_sub = this->create_subscription<geometry_msgs::msg::Vector3>(
-            T_target, 60, std::bind(&GimbalControlNode::target_pixel_cb, this, std::placeholders::_1));
+            T_target, 50, std::bind(&GimbalControlNode::target_pixel_cb, this, std::placeholders::_1));
 
         gimbal_step_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_step, 20);
     
@@ -113,23 +113,46 @@ private:
 
     geometry_msgs::msg::Vector3 gimbal_step_IK(geometry_msgs::msg::Vector3 target_pixel_coordinates){
         geometry_msgs::msg::Vector3 gimbal_step_result;
-        // float px_n = (target_pixel_coordinates.x - float(IMG_CENTER_W))/float(IMG_CENTER_W);
-        // float py_n = (target_pixel_coordinates.y - float(IMG_CENTER_H))/float(IMG_CENTER_H);
-        // //down and right are positive
-        // float p_r = sqrt(px_n*px_n + py_n*py_n);
-        // float p_a = atan2(px_n, py_n);
-
+        float px_n = (target_pixel_coordinates.x - float(IMG_CENTER_W))/float(IMG_CENTER_W);
+        float py_n = (target_pixel_coordinates.y - float(IMG_CENTER_H))/float(IMG_CENTER_H);
+        //down and right are positive
         
-        // std::cout<<"px_n : "<<px_n<<std::endl;
-        // std::cout<<"py_n : "<<py_n<<std::endl;
-        // std::cout<<" ";
+        //add tiny amount to prevent division by zero issues
+        float p_r = sqrt(px_n*px_n + py_n*py_n);
+        float p_a = atan2(px_n, py_n);
 
-        //gimbal_step.y = TEST_GIMBAL_VEL*p_r/abs(p_r);
-        gimbal_step_result.x = 0.01;
-        gimbal_step_result.y = 0.01;
+        //big oof - p_r will always be positive
+
+        /**
+        for gimbal steps:
+        x: positive = clockwise, negative = counter clockwise - rotate along same x as drone
+        y: positive = look down, negative = look up - along same y axis as drone
+        
+        for image plane:
+        px_n positive down
+        py_n positive right
+
+
+
+        **/
+
+        //need to consider direction - the sign won't change
+        gimbal_step_result.y = TEST_GIMBAL_VEL*py_n;
+        //gimbal_step_result.y = TEST_GIMBAL_VEL;
+        // gimbal_step_result.x = 0.01;
+        // gimbal_step_result.y = 0.01;
         //angle_delta
 
         //goal is to zero out px_n and py_n
+
+
+        std::cout<<"px_n : "<<px_n<<std::endl;
+        std::cout<<"py_n : "<<py_n<<std::endl;
+        std::cout<<"py_r : "<<p_r<<std::endl;
+        std::cout<<"vg_y: "<<gimbal_step_result.y<<std::endl;
+        
+        std::cout<<" ";
+
 
         return gimbal_step_result;
 
