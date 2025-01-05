@@ -33,7 +33,6 @@ public:
     
         gimbal_step_thread = std::thread(&GimbalControlNode::publish_gimbal_steps, this);
 
-    
     }
 
     void join_gimbal_step_thread(){
