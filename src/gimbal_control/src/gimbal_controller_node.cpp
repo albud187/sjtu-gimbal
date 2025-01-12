@@ -87,26 +87,6 @@ private:
         float angle_delta = atan2(py_n, px_n)-PI/2;
         float angle_delta_deg = angle_delta*180/PI;
 
-
-        //Check if the target is sufficiently far from the center
-        // if (p_r > THRESHOLD_RADIUS) {
-        //     // Compute gimbal motion proportionally to the pixel offset
-        //     gimbal_step_result.x = -TEST_GIMBAL_VEL*px_n;
-        //     gimbal_step_result.y = TEST_GIMBAL_VEL*py_n;
-        //     // Apply smoothing for stability
-        //     gimbal_step_result.x = SMOOTHING_FACTOR * previous_gimbal_step.x + 
-        //                            (1 - SMOOTHING_FACTOR) * gimbal_step_result.x;
-            
-            
-            
-        //     gimbal_step_result.y = SMOOTHING_FACTOR * previous_gimbal_step.y + 
-        //                            (1 - SMOOTHING_FACTOR) * gimbal_step_result.y;
-
-        //     // Update the previous gimbal step
-        //     previous_gimbal_step.x = gimbal_step_result.x;
-        //     previous_gimbal_step.y = gimbal_step_result.y;
-        // } 
-        
         gimbal_step_result.x = -TEST_GIMBAL_VEL*px_n;
         gimbal_step_result.y = TEST_GIMBAL_VEL*py_n;
         

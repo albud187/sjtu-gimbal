@@ -141,7 +141,6 @@ private:
            
             roi_center_x = target_roi.x;
             roi_center_y = target_roi.y;
-            std::cout<<roi_center_x<<std::endl;
 
             int target_top_left_x = roi_center_x - UI_SQ_SIDE_LENTH/2;
             int target_top_left_y = roi_center_y - UI_SQ_SIDE_LENTH/2;
