@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="gimbal_camera_inertial_macros.xacro"/>
+
+    <!-- AX1_LINK -->
+    <joint name="ax1_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="ax1_link"/>
+        <limit effort="0.1" velocity="1" upper="${pi*2}" lower="${-pi*2}"/>
+        <axis xyz="1 0 0"/>
+        <origin xyz="0.3 0 0.075"/>
+        <dynamics damping="0.001" friction="0.001"/>
+    </joint>
+
+    <link name="ax1_link">
+        <xacro:inertial_box mass="0.001" x="0.025" y="0.025" z="0.025">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="ax1_link">
+        <material>Gazebo/Red</material>
+        <mu1 value="10"/>
+        <mu2 value="10"/>
+    </gazebo>
+
+    <!-- AX2_LINK -->
+    <joint name="ax2_joint" type="revolute">
+        <parent link="ax1_link"/>
+        <child link="ax2_link"/>
+        <limit effort="0.1" velocity="1" upper="${pi/2}" lower="${-pi/2}"/>
+        <origin xyz="0 0 0"/>
+        <axis xyz="0 1 0"/>
+        <dynamics damping="0.001" friction="0.001"/>
+    </joint>
+
+    <link name="ax2_link">
+        <xacro:inertial_box mass="0.001" x="0.025" y="0.025" z="0.025">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="ax2_link">
+        <material>Gazebo/Black</material>
+        <mu1 value="10"/>
+        <mu2 value="10"/>
+    </gazebo>
+
+    <!-- Camera Link -->
+    <joint name="camera_joint" type="fixed">
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <parent link="ax2_link"/>
+        <child link="camera_link"/>
+    </joint>
+
+    <link name="camera_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="0.025 0.025 0.025"/>
+            </geometry>
+        </visual>
+    </link>
+
+
+<!-- controller -->
+	<ros2_control name="GazeboSystem" type="system">
+
+    	<hardware>
+      		<plugin>gazebo_ros2_control/GazeboSystem</plugin>
+    	</hardware>
+		
+		<joint name="ax1_joint">
+      		<command_interface name="position">
+        		<param name="min">${-pi*2}</param>
+        		<param name="max">${pi*2}</param>
+      		</command_interface>
+
+
+      		<state_interface name="position">
+				<param name="initial_value">0</param>
+			</state_interface>
+
+            <command_interface name="velocity">
+        		<param name="min">${-pi*2}</param>
+        		<param name="max">${pi*2}</param>
+      		</command_interface>
+
+      		<state_interface name="velocity"/>
+      		<!--<state_interface name="effort"/>-->
+    	</joint>    		
+ 
+    	<joint name="ax2_joint">
+      		<command_interface name="position">
+        		<param name="min">${-pi/2}</param>
+        		<param name="max">${pi/2}</param>
+      		</command_interface>
+      		<state_interface name="position">
+				<param name="initial_value">${pi/12}</param>
+			</state_interface>
+
+            <command_interface name="velocity">
+        		<param name="min">${-pi*2}</param>
+        		<param name="max">${pi*2}</param>
+      		</command_interface>
+      		<state_interface name="velocity"/>
+      		<!--<state_interface name="effort"/>-->
+    	</joint>
+
+  	</ros2_control>	
+	
+    <!-- Camera Sensor -->
+    <gazebo reference="camera_link">
+        <sensor name="front_camera" type="camera">
+            <camera>
+                <horizontal_fov>2.09</horizontal_fov>
+                <image>
+                    <width>800</width>
+                    <height>800</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.1</near>
+                    <far>100</far>
+                </clip>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.005</stddev>
+                </noise>
+            </camera>
+            <always_on>1</always_on>
+            <update_rate>60</update_rate>
+            <visualize>true</visualize>
+            <plugin name="camera_front" filename="libgazebo_ros_camera.so">
+                <ros>
+                    <remapping>image_raw:=camera_front</remapping>
+                    <remapping>camera_info:=camera_front_info</remapping>
+                </ros>
+                <camera_name>front</camera_name>
+                <frame_name>front_cam_link</frame_name>
+                <hack_baseline>0.07</hack_baseline>
+            </plugin>
+        </sensor>
+    </gazebo>
+</robot>

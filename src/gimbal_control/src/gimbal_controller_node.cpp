@@ -1,47 +1,3 @@
-// #include "rclcpp/rclcpp.hpp"
-// #include "geometry_msgs/msg/vector3.hpp"
-
-// class GimbalControlNode : public rclcpp::Node
-// {
-// public:
-//     GimbalControlNode() : Node("gimbal_controller_node")
-//     {
-//         // Define the topic to publish
-//         std::string T_gimbal_step = "/gimbal_step";
-
-//         // Initialize the publisher
-//         gimbal_step_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_step, 40);
-
-//         // Timer to publish the message at a fixed rate
-//         timer_ = this->create_wall_timer(
-//             std::chrono::milliseconds(25),  // 40hz interval
-//             std::bind(&GimbalControlNode::publish_gimbal_step, this));
-
-//         // Initialize the message with fixed values
-//         gimbal_step.x = 0.02;
-//         gimbal_step.y = 0.02;
-//         gimbal_step.z = 0.0;  // Default value
-//     }
-
-// private:
-//     rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gimbal_step_pub;
-//     rclcpp::TimerBase::SharedPtr timer_;
-//     geometry_msgs::msg::Vector3 gimbal_step;
-
-//     void publish_gimbal_step()
-//     {
-//         gimbal_step_pub->publish(gimbal_step);
-//     }
-// };
-
-// int main(int argc, char *argv[])
-// {
-//     rclcpp::init(argc, argv);
-//     rclcpp::spin(std::make_shared<GimbalControlNode>());
-//     rclcpp::shutdown();
-//     return 0;
-// }
-
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -73,6 +29,9 @@ public:
         target_pixel_sub = this->create_subscription<geometry_msgs::msg::Vector3>(
             T_target, 50, std::bind(&GimbalControlNode::target_pixel_cb, this, std::placeholders::_1));
 
+        gimbal_state_sub = this->create_subscription<geometry_msgs::msg::Vector3>(
+            T_gimbal_state, 50, std::bind(&GimbalControlNode::gimbal_state_cb, this, std::placeholders::_1));
+
         gimbal_step_pub = this->create_publisher<geometry_msgs::msg::Vector3>(T_gimbal_step, 20);
     
         gimbal_step_thread = std::thread(&GimbalControlNode::publish_gimbal_steps, this);
@@ -90,15 +49,16 @@ private:
     //subscribers
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr flight_mode_sub;
     rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr target_pixel_sub;
-    
+    rclcpp::Subscription<geometry_msgs::msg::Vector3>::SharedPtr gimbal_state_sub;
     //publishers
     rclcpp::Publisher<geometry_msgs::msg::Vector3>::SharedPtr gimbal_step_pub;
-
+    
     //messages
     geometry_msgs::msg::Vector3 target_pixel_coordinates;
     geometry_msgs::msg::Vector3 gimbal_step;
     std_msgs::msg::String flt_mode;
-
+    geometry_msgs::msg::Vector3 previous_gimbal_step;
+    geometry_msgs::msg::Vector3 gimbal_state;
     //threads
     std::thread gimbal_step_thread;
 
@@ -110,58 +70,61 @@ private:
     void target_pixel_cb(const geometry_msgs::msg::Vector3::SharedPtr msg){
         target_pixel_coordinates = *msg;
     }
-
-    geometry_msgs::msg::Vector3 gimbal_step_IK(geometry_msgs::msg::Vector3 target_pixel_coordinates){
-        geometry_msgs::msg::Vector3 gimbal_step_result;
-        float px_n = (target_pixel_coordinates.x - float(IMG_CENTER_W))/float(IMG_CENTER_W);
-        float py_n = (target_pixel_coordinates.y - float(IMG_CENTER_H))/float(IMG_CENTER_H);
-        //down and right are positive
-        
-        //add tiny amount to prevent division by zero issues
-        float p_r = sqrt(px_n*px_n + py_n*py_n);
-        float p_a = atan2(px_n, py_n);
-
-        //big oof - p_r will always be positive
-
-        /**
-        for gimbal steps:
-        x: positive = clockwise, negative = counter clockwise - rotate along same x as drone
-        y: positive = look down, negative = look up - along same y axis as drone
-        
-        for image plane:
-        px_n positive down
-        py_n positive right
-
-
-
-        **/
-
-        //need to consider direction - the sign won't change
-        gimbal_step_result.y = TEST_GIMBAL_VEL*py_n;
-        //gimbal_step_result.y = TEST_GIMBAL_VEL;
-        // gimbal_step_result.x = 0.01;
-        // gimbal_step_result.y = 0.01;
-        //angle_delta
-
-        //goal is to zero out px_n and py_n
-
-
-        std::cout<<"px_n : "<<px_n<<std::endl;
-        std::cout<<"py_n : "<<py_n<<std::endl;
-        std::cout<<"py_r : "<<p_r<<std::endl;
-        std::cout<<"vg_y: "<<gimbal_step_result.y<<std::endl;
-        
-        std::cout<<" ";
-
-
-        return gimbal_step_result;
-
+    void gimbal_state_cb(const geometry_msgs::msg::Vector3::SharedPtr msg){
+        gimbal_state = *msg;
     }
 
-    void publish_gimbal_steps(){
+
+    geometry_msgs::msg::Vector3 gimbal_step_IK(geometry_msgs::msg::Vector3 target_pixel_coordinates) {
+        geometry_msgs::msg::Vector3 gimbal_step_result;
+
+        // Normalize pixel coordinates to [-1, 1]
+        float px_n = (target_pixel_coordinates.x - IMG_CENTER_W) / IMG_CENTER_W;
+        float py_n = (target_pixel_coordinates.y - IMG_CENTER_H) / IMG_CENTER_H;
+
+        // Compute distance (radius) from the image center
+        float p_r = std::sqrt(px_n * px_n + py_n * py_n);
+        float angle_delta = atan2(py_n, px_n)-PI/2;
+        float angle_delta_deg = angle_delta*180/PI;
+
+
+        //Check if the target is sufficiently far from the center
+        // if (p_r > THRESHOLD_RADIUS) {
+        //     // Compute gimbal motion proportionally to the pixel offset
+        //     gimbal_step_result.x = -TEST_GIMBAL_VEL*px_n;
+        //     gimbal_step_result.y = TEST_GIMBAL_VEL*py_n;
+        //     // Apply smoothing for stability
+        //     gimbal_step_result.x = SMOOTHING_FACTOR * previous_gimbal_step.x + 
+        //                            (1 - SMOOTHING_FACTOR) * gimbal_step_result.x;
+            
+            
+            
+        //     gimbal_step_result.y = SMOOTHING_FACTOR * previous_gimbal_step.y + 
+        //                            (1 - SMOOTHING_FACTOR) * gimbal_step_result.y;
+
+        //     // Update the previous gimbal step
+        //     previous_gimbal_step.x = gimbal_step_result.x;
+        //     previous_gimbal_step.y = gimbal_step_result.y;
+        // } 
+        
+        gimbal_step_result.x = -TEST_GIMBAL_VEL*px_n;
+        gimbal_step_result.y = TEST_GIMBAL_VEL*py_n;
+        
+        // Debugging output for monitoring behavior
+        std::cout << "px_n : " << px_n << std::endl;
+        std::cout << "py_n : " << py_n << std::endl;
+        std::cout << "p_r : " << p_r << std::endl;
+        std::cout << "angle_delta : "<<angle_delta_deg<<std::endl;
+        // std::cout << "gimbal_step.x (joint 1): " << gimbal_step_result.x << std::endl;
+        // std::cout << "gimbal_step.y (joint 2): " << gimbal_step_result.y << std::endl;
+        std::cout << " " << std::endl;
+
+        return gimbal_step_result;
+    }
+        void publish_gimbal_steps(){
         while(rclcpp::ok()){
 
-            while (flt_mode.data=="TRACKING" || flt_mode.data == "TRACK"){
+            if (flt_mode.data=="TRACKING" || flt_mode.data == "TRACK"){
             std::cout<<"TRACKING"<<std::endl;
             gimbal_step = gimbal_step_IK(target_pixel_coordinates);
             gimbal_step_pub->publish(gimbal_step);

@@ -12,7 +12,7 @@ import xacro
 
 XACRO_FILE_NAME = "sjtu_drone_gimbal.xacro"
 pkg_this = get_package_share_directory("sjtu_drone_description")
-xacro_file = os.path.join(pkg_this, "urdf_no_ns", XACRO_FILE_NAME)
+xacro_file = os.path.join(pkg_this, "urdf_turret", XACRO_FILE_NAME)
 robot_description_config = xacro.process_file(xacro_file)
 
 def generate_launch_description():

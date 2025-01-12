@@ -62,8 +62,8 @@ private:
     int square_red = 0;
     int square_green = 0;
     
-    int roi_center_x = IMG_CENTER_W;
-    int roi_center_y = IMG_CENTER_H;
+    int roi_center_x = IMG_CENTER_W+1;
+    int roi_center_y = IMG_CENTER_H+1;
 
     int roi_len = UI_SQ_SIDE_LENTH/2;
     
@@ -94,12 +94,10 @@ private:
                 square_blue = 255;
                 square_red = 0;
                 square_green = 0;
-                roi_center_x = IMG_CENTER_W;
-                roi_center_y = IMG_CENTER_H;
+                roi_center_x = IMG_CENTER_W+1;
+                roi_center_y = IMG_CENTER_H+1;
                 roi_len = UI_SQ_SIDE_LENTH/2;
             }
-
-            
 
             int pvx_y = p01y - 5*cmd_vel.linear.x;
             int pvy_x = p0x - 5*cmd_vel.linear.y;

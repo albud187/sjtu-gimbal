@@ -11,7 +11,7 @@ int IMAGE_WIDTH = 800;
 int IMG_CENTER_H = IMAGE_HEIGHT/2;
 int IMG_CENTER_W = IMAGE_WIDTH/2;
 int VEL_LINE_THICKNESS = 6;
-int UI_SQ_SIDE_LENTH = 125;
+int UI_SQ_SIDE_LENTH = 175;
 
 float FOCAL_LEN = 232.1136;
 
@@ -21,6 +21,9 @@ float MAX_ROT_RATE_1 = 0.01;
 float MAX_ROT_RATE_2 = 0.01;
 
 // rad/s
-float MAX_GIMBAL_VEL = 0.2;
-float TEST_GIMBAL_VEL = 0.2;
+float MAX_GIMBAL_VEL = 0.15;
+float TEST_GIMBAL_VEL = 0.01;
+const float PI = 3.141592;
+const float SMOOTHING_FACTOR = 0.75; // Smoothing factor for gimbal step
+const float THRESHOLD_RADIUS = 0.15; // Minimum movement threshold
 #endif
