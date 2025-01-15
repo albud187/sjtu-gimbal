@@ -22,8 +22,9 @@ float MAX_ROT_RATE_2 = 0.01;
 
 // rad/s
 float MAX_GIMBAL_VEL = 0.15;
-float TEST_GIMBAL_VEL = 0.01;
+float TEST_GIMBAL_VEL = 0.10;
 const float PI = 3.141592;
+const int MAX_TEMPLATES = 15;
 const float SMOOTHING_FACTOR = 0.75; // Smoothing factor for gimbal step
 const float THRESHOLD_RADIUS = 0.15; // Minimum movement threshold
 #endif

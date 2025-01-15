@@ -22,7 +22,6 @@ cv::Mat snapshot(cv::Mat src_img, cv::Point p1, cv::Point p2){
 
 cv::Point findTemplate(cv::Mat cv_ptr_image, cv::Mat template_image) {
 
-    
     cv::Mat result;
     int result_cols = cv_ptr_image.cols - template_image.cols + 1;
     int result_rows = cv_ptr_image.rows - template_image.rows + 1;
