@@ -8,16 +8,27 @@ from launch.actions import IncludeLaunchDescription, ExecuteProcess, RegisterEve
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.event_handlers import OnProcessExit
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument
+from launch_ros.actions import Node
 
+import xacro
 
+XACRO_FILE_NAME = "sjtu_drone_gimbal.xacro"
+pkg_this = get_package_share_directory("sjtu_drone_description")
+xacro_file = os.path.join(pkg_this, "urdf_turret", XACRO_FILE_NAME)
+robot_description_config = xacro.process_file(xacro_file)
+use_sim_time = True
 
 def generate_launch_description():
-    package_name='sjtu_drone_bringup' 
-
-    rsp = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory(package_name),'launch','rsp.launch.py'
-                )]), launch_arguments={'use_sim_time': 'true'}.items()
+    
+    
+    params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
+    rsp = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        output='screen',
+        parameters=[params]
     )
 
     gazebo = IncludeLaunchDescription(
