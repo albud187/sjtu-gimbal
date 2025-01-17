@@ -1,9 +1,0 @@
-<?xml version="1.0" ?>
-<robot name="sjtu_drone" xmlns:xacro="http://ros.org/wiki/xacro">
-  <xacro:arg name="drone_id" default="drone0"/>
-  <xacro:property name="drone_id" value="$(arg drone_id)"/>
-
- <xacro:include filename="sjtu_drone_base.xacro"/>
- <xacro:include filename="gimbal_camera_complete.xacro"/>
-
-</robot>

@@ -11,19 +11,18 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-#hardcode joints namespaces for now
 forward_position_controller:
   ros__parameters:
     joints:
-      - drone1/ax1_joint
-      - drone1/ax2_joint
+      - ax1_joint
+      - ax2_joint
     interface_name: position
 
 joint_trajectory_controller:
   ros__parameters:
     joints:
-      - drone1/ax1_joint
-      - drone1/ax2_joint
+      - ax1_joint
+      - ax2_joint
     interface_name: position
     command_interfaces:
       - position

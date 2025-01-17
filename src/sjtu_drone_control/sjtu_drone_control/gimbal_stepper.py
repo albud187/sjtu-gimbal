@@ -26,8 +26,6 @@ class JointStepperNode(Node):
         self.joint_angle_sub = self.create_subscription(Vector3, T_GIMBAL_STEP, self.gimbal_step_cb, 60)
         self.joint_trajectory_pub = self.create_publisher(JointTrajectory, T_JOINT_TRAJECTORY, 60)
         
-       
-
     def gimbal_state_cb(self, msg):
         self.gimbal_state.x = msg.position[0]
         self.gimbal_state.y = msg.position[1]
